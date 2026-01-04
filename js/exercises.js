@@ -233,6 +233,45 @@ const Exercises = (() => {
         };
     }
 
+    // Generate workout plan for a SINGLE exercise
+    function generateSingleExercisePlan(exerciseId, levelId, isBadDay = false) {
+        const level = isBadDay ? BAD_DAY_LEVEL : getLevel(levelId);
+        const exercise = getExercise(exerciseId);
+
+        if (!exercise) return null;
+
+        const plan = [];
+
+        // For each set in the pyramid (e.g., 5-3-1)
+        level.pyramid.forEach((reps, setIndex) => {
+            plan.push({
+                exercise: exercise,
+                setNumber: setIndex + 1,
+                totalSets: level.pyramid.length,
+                reps: reps,
+                holdDuration: level.holdDuration,
+                isLastSet: setIndex === level.pyramid.length - 1
+            });
+        });
+
+        return {
+            level: level,
+            exerciseId: exerciseId,
+            exercises: plan,
+            totalSets: level.pyramid.length,
+            estimatedDuration: calculateDuration(plan, level.holdDuration, 10)
+        };
+    }
+
+    // Get next exercise in sequence
+    function getNextExercise(currentExerciseId) {
+        const currentIndex = EXERCISES.findIndex(ex => ex.id === currentExerciseId);
+        if (currentIndex < EXERCISES.length - 1) {
+            return EXERCISES[currentIndex + 1];
+        }
+        return null; // No more exercises
+    }
+
     // Calculate estimated workout duration
     function calculateDuration(plan, holdDuration, restDuration) {
         let totalSeconds = 0;
@@ -275,6 +314,8 @@ const Exercises = (() => {
         getAllLevels,
         getBadDayLevel,
         generateWorkoutPlan,
+        generateSingleExercisePlan,
+        getNextExercise,
         calculateDuration,
         getNextLevel,
         shouldSuggestLevelUp

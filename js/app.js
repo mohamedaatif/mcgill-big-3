@@ -39,6 +39,7 @@ const App = (() => {
         updateGreeting();
         await updateConsistencyCard();
         updateLevelBadge();
+        resetTodayProgress(); // Initialize today's exercise progress
         updateExerciseList();
 
         // Register service worker
@@ -156,40 +157,78 @@ const App = (() => {
         badge.querySelector('.level-detail').textContent = level.description;
     }
 
-    // Update exercise list preview
+    // Today's exercise completion tracking
+    let todayProgress = {};
+
+    // Reset today's progress (called at init and on new day)
+    function resetTodayProgress() {
+        todayProgress = {};
+        Exercises.getAllExercises().forEach(ex => {
+            todayProgress[ex.id] = false;
+        });
+    }
+
+    // Get today's date key for storage
+    function getTodayKey() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    // Update exercise list - now with individual start buttons
     function updateExerciseList() {
         const isBadDay = elements.badDayMode.checked;
-        const plan = Exercises.generateWorkoutPlan(settings.level, isBadDay);
-
-        // Group exercises
-        const exerciseGroups = {};
-        plan.exercises.forEach(item => {
-            const id = item.exercise.id.replace('-left', '').replace('-right', '');
-            if (!exerciseGroups[id]) {
-                exerciseGroups[id] = {
-                    name: item.exercise.name,
-                    icon: item.exercise.icon,
-                    sets: plan.level.pyramid.length,
-                    repsPerSet: plan.level.pyramid.join('-'),
-                    holdDuration: plan.level.holdDuration
-                };
-            }
-        });
+        const level = isBadDay ? Exercises.getBadDayLevel() : Exercises.getLevel(settings.level);
+        const exercises = Exercises.getAllExercises();
 
         let html = '';
-        Object.values(exerciseGroups).forEach(ex => {
+        exercises.forEach(ex => {
+            const isDone = todayProgress[ex.id];
+            const statusClass = isDone ? 'done' : '';
+            const statusIcon = isDone ? '✅' : '○';
+            const buttonText = isDone ? 'Done' : 'Start';
+            const buttonClass = isDone ? 'btn-done' : 'btn-start';
+
             html += `
-                <div class="exercise-card">
+                <div class="exercise-card ${statusClass}" data-exercise-id="${ex.id}">
+                    <div class="exercise-status-icon">${statusIcon}</div>
                     <div class="exercise-icon">${ex.icon}</div>
                     <div class="exercise-info">
-                        <div class="exercise-name">${ex.name}</div>
-                        <div class="exercise-detail">${ex.repsPerSet} reps × ${ex.holdDuration}s holds</div>
+                        <div class="exercise-name">${ex.name}${ex.side ? ` (${ex.side})` : ''}</div>
+                        <div class="exercise-detail">${level.pyramid.join('-')} reps × ${level.holdDuration}s holds</div>
                     </div>
+                    <button class="btn btn-sm ${buttonClass}" data-start-exercise="${ex.id}" ${isDone ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
                 </div>
             `;
         });
 
+        // Add overall progress summary
+        const completedCount = Object.values(todayProgress).filter(v => v).length;
+        const totalCount = exercises.length;
+        const progressPercent = (completedCount / totalCount) * 100;
+
+        html = `
+            <div class="session-progress">
+                <div class="session-progress-header">
+                    <span class="session-progress-label">Today's Progress</span>
+                    <span class="session-progress-count">${completedCount}/${totalCount}</span>
+                </div>
+                <div class="session-progress-bar">
+                    <div class="session-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+            </div>
+        ` + html;
+
         elements.exerciseList.innerHTML = html;
+
+        // Add click handlers for start buttons
+        document.querySelectorAll('[data-start-exercise]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const exerciseId = btn.dataset.startExercise;
+                startSingleExercise(exerciseId);
+            });
+        });
     }
 
     // Apply settings
@@ -335,6 +374,175 @@ const App = (() => {
             onSetComplete: (data) => onSetComplete(data),
             onWorkoutComplete: (data) => onWorkoutComplete(data)
         });
+    }
+
+    // Track current exercise being performed
+    let currentExerciseId = null;
+
+    // Start a SINGLE exercise (new flow)
+    function startSingleExercise(exerciseId) {
+        // Initialize audio context on user interaction
+        Timer.initAudio();
+
+        const isBadDay = elements.badDayMode.checked;
+        const plan = Exercises.generateSingleExercisePlan(exerciseId, settings.level, isBadDay);
+
+        if (!plan) {
+            showToast('Exercise not found');
+            return;
+        }
+
+        currentExerciseId = exerciseId;
+
+        // Hide preview, show active workout
+        elements.workoutPreview.classList.add('hidden');
+        elements.startWorkout.classList.add('hidden');
+        elements.workoutActive.classList.remove('hidden');
+        elements.workoutComplete.classList.add('hidden');
+
+        workoutInProgress = true;
+
+        // Update initial UI
+        const firstExercise = plan.exercises[0];
+        updateWorkoutUI({
+            exercise: firstExercise,
+            time: 3,
+            phase: 'transition',
+            rep: 1,
+            totalReps: firstExercise.reps
+        });
+
+        // Start timer with single exercise plan
+        Timer.startWorkout(plan, {
+            holdDuration: isBadDay ? 5 : settings.holdDuration,
+            restDuration: settings.restDuration,
+            soundEnabled: settings.soundEnabled,
+            voiceEnabled: settings.voiceEnabled,
+            vibrationEnabled: settings.vibrationEnabled
+        }, {
+            onTick: (data) => updateWorkoutUI(data),
+            onPhaseChange: (data) => updatePhaseUI(data),
+            onExerciseChange: (data) => updateExerciseUI(data),
+            onRepComplete: (data) => onRepComplete(data),
+            onSetComplete: (data) => onSetComplete(data),
+            onWorkoutComplete: (data) => onSingleExerciseComplete(data)
+        });
+    }
+
+    // Handle single exercise completion
+    async function onSingleExerciseComplete(data) {
+        workoutInProgress = false;
+
+        // Mark this exercise as done
+        if (currentExerciseId) {
+            todayProgress[currentExerciseId] = true;
+        }
+
+        // Check if there's a next exercise
+        const nextExercise = Exercises.getNextExercise(currentExerciseId);
+        const completedCount = Object.values(todayProgress).filter(v => v).length;
+        const totalCount = Exercises.getAllExercises().length;
+        const allDone = completedCount === totalCount;
+
+        // Show complete screen with Continue option
+        elements.workoutActive.classList.add('hidden');
+        elements.workoutComplete.classList.remove('hidden');
+
+        const exercise = Exercises.getExercise(currentExerciseId);
+        document.getElementById('completeDuration').textContent = Timer.formatTime(data.duration);
+        document.getElementById('completeExercises').textContent = `${completedCount}/${totalCount}`;
+
+        // Update message based on progress
+        if (allDone) {
+            document.getElementById('completeMessage').textContent = '🎉 All exercises complete! Great job caring for your spine today.';
+        } else {
+            document.getElementById('completeMessage').textContent = `${exercise.name} complete! ${totalCount - completedCount} exercises remaining.`;
+        }
+
+        // Update complete buttons with Continue to Next
+        updateCompleteButtons(nextExercise, allDone);
+
+        currentExerciseId = null;
+    }
+
+    // Update completion screen buttons
+    function updateCompleteButtons(nextExercise, allDone) {
+        const completeDiv = elements.workoutComplete;
+
+        // Find or create button container
+        let btnContainer = completeDiv.querySelector('.complete-buttons');
+        if (!btnContainer) {
+            btnContainer = document.createElement('div');
+            btnContainer.className = 'complete-buttons';
+            completeDiv.appendChild(btnContainer);
+        }
+
+        if (allDone) {
+            btnContainer.innerHTML = `
+                <button class="btn btn-primary" id="finishSession">Finish Session</button>
+                <button class="btn btn-secondary" id="logPainAfterComplete">Log Pain Level</button>
+            `;
+        } else if (nextExercise) {
+            btnContainer.innerHTML = `
+                <button class="btn btn-primary btn-continue" id="continueToNext">
+                    Continue: ${nextExercise.name}${nextExercise.side ? ` (${nextExercise.side})` : ''} →
+                </button>
+                <button class="btn btn-secondary" id="backToExercises">Back to Exercises</button>
+            `;
+        } else {
+            btnContainer.innerHTML = `
+                <button class="btn btn-primary" id="backToExercises">Done</button>
+            `;
+        }
+
+        // Attach handlers
+        const continueBtn = btnContainer.querySelector('#continueToNext');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', () => {
+                startSingleExercise(nextExercise.id);
+            });
+        }
+
+        const backBtn = btnContainer.querySelector('#backToExercises');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                elements.workoutComplete.classList.add('hidden');
+                elements.workoutPreview.classList.remove('hidden');
+                elements.startWorkout.classList.remove('hidden');
+                updateExerciseList();
+            });
+        }
+
+        const finishBtn = btnContainer.querySelector('#finishSession');
+        if (finishBtn) {
+            finishBtn.addEventListener('click', async () => {
+                // Save full workout session
+                await Storage.saveWorkout({
+                    completed: true,
+                    level: settings.level,
+                    badDayMode: elements.badDayMode.checked,
+                    exercisesCompleted: Exercises.getAllExercises().length
+                });
+                await updateConsistencyCard();
+                resetTodayProgress();
+
+                elements.workoutComplete.classList.add('hidden');
+                elements.workoutPreview.classList.remove('hidden');
+                elements.startWorkout.classList.remove('hidden');
+                updateExerciseList();
+                showToast('Session complete! Progress saved.');
+            });
+        }
+
+        const logPainBtn = btnContainer.querySelector('#logPainAfterComplete');
+        if (logPainBtn) {
+            logPainBtn.addEventListener('click', () => {
+                elements.workoutComplete.classList.add('hidden');
+                elements.workoutPreview.classList.remove('hidden');
+                elements.startWorkout.classList.remove('hidden');
+                navigateTo('pain-log');
+            });
+        }
     }
 
     // Update workout UI on tick
