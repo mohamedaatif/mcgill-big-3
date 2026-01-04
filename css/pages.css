@@ -30,19 +30,56 @@
     font-weight: var(--font-medium);
 }
 
-/* Enhanced Timer Ring with Gradient */
+/* Enhanced Timer Ring with Premium Breathing Animation */
 .timer-ring-container {
     position: relative;
     animation: fadeInScale var(--transition-slow);
 }
 
+/* Outer breathing aura - 1 second rhythm tied to timer tick */
 .timer-ring-container::before {
     content: '';
     position: absolute;
-    inset: -20px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+    inset: -25px;
     border-radius: 50%;
-    animation: ringPulse 2s infinite;
+    background: radial-gradient(circle, var(--timer-glow-color, rgba(6, 182, 212, 0.12)) 0%, transparent 65%);
+    animation: timerBreath 1s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Inner soft glow - offset rhythm for depth */
+.timer-ring-container::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--timer-glow-color, rgba(6, 182, 212, 0.08)) 0%, transparent 70%);
+    animation: timerBreath 1s ease-in-out infinite 0.5s;
+    pointer-events: none;
+}
+
+/* Phase-specific glow colors */
+.timer-ring-container.phase-hold {
+    --timer-glow-color: rgba(6, 182, 212, 0.15);
+}
+
+.timer-ring-container.phase-rest {
+    --timer-glow-color: rgba(245, 158, 11, 0.15);
+}
+
+/* The breathing animation - subtle expansion tied to 1s timer rhythm */
+@keyframes timerBreath {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: scale(1.03);
+        opacity: 1;
+    }
 }
 
 /* ===== Progress Page ===== */

@@ -774,12 +774,18 @@ const App = (() => {
             phaseText.textContent = 'HOLD';
             phaseText.classList.remove('rest');
             elements.timerProgress.style.stroke = '#06b6d4';
-            if (timerContainer) timerContainer.classList.remove('phase-rest');
+            if (timerContainer) {
+                timerContainer.classList.add('phase-hold');
+                timerContainer.classList.remove('phase-rest');
+            }
         } else if (data.phase === 'rest') {
             phaseText.textContent = 'REST';
             phaseText.classList.add('rest');
             elements.timerProgress.style.stroke = '#f59e0b';
-            if (timerContainer) timerContainer.classList.add('phase-rest');
+            if (timerContainer) {
+                timerContainer.classList.add('phase-rest');
+                timerContainer.classList.remove('phase-hold');
+            }
         }
 
         elements.timerLabel.textContent = 'seconds';
