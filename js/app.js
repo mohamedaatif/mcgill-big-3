@@ -176,7 +176,8 @@ const App = (() => {
     // Update exercise list - grouped for bilateral exercises
     function updateExerciseList() {
         const isBadDay = elements.badDayMode.checked;
-        const level = isBadDay ? Exercises.getBadDayLevel() : Exercises.getLevel(settings.level);
+        const repPattern = isBadDay ? '3-2-1' : (settings.repPattern || '5-3-1');
+        const holdDuration = isBadDay ? 5 : (settings.holdDuration || 10);
         const exercises = Exercises.getAllExercises();
 
         // Group exercises: Curl-Up (single), Side Plank (L+R), Bird-Dog (L+R)
@@ -219,7 +220,7 @@ const App = (() => {
                     <div class="exercise-icon">${ex.icon}</div>
                     <div class="exercise-info">
                         <div class="exercise-name">${ex.label}</div>
-                        <div class="exercise-detail">${level.pyramid.join('-')} reps × ${level.holdDuration}s holds</div>
+                        <div class="exercise-detail">${repPattern} reps × ${holdDuration}s holds</div>
                     </div>
                     <button class="btn btn-sm ${buttonClass}" data-start-exercise="${ex.id}" ${isDone ? 'disabled' : ''}>
                         ${buttonText}
@@ -269,7 +270,8 @@ const App = (() => {
         const settingElements = {
             settingHoldDuration: settings.holdDuration,
             settingRestDuration: settings.restDuration,
-            settingLevel: settings.level,
+            settingRepPattern: settings.repPattern || '5-3-1',
+            settingRollingPlank: settings.rollingPlank || false,
             settingWalkingGoal: settings.walkingGoal,
             settingReminder: settings.reminderEnabled,
             settingReminderTime: settings.reminderTime,
@@ -289,6 +291,59 @@ const App = (() => {
                 }
             }
         });
+
+        // Update slider value displays
+        const holdDisplay = document.getElementById('holdDurationValue');
+        if (holdDisplay) holdDisplay.textContent = `${settings.holdDuration}s`;
+        const restDisplay = document.getElementById('restDurationValue');
+        if (restDisplay) restDisplay.textContent = `${settings.restDuration}s`;
+
+        // Add slider change handlers
+        const holdSlider = document.getElementById('settingHoldDuration');
+        if (holdSlider && !holdSlider.dataset.bound) {
+            holdSlider.dataset.bound = 'true';
+            holdSlider.addEventListener('input', (e) => {
+                document.getElementById('holdDurationValue').textContent = `${e.target.value}s`;
+            });
+            holdSlider.addEventListener('change', async (e) => {
+                settings.holdDuration = parseInt(e.target.value);
+                await Storage.saveSettings(settings);
+                updateExerciseList();
+            });
+        }
+
+        const restSlider = document.getElementById('settingRestDuration');
+        if (restSlider && !restSlider.dataset.bound) {
+            restSlider.dataset.bound = 'true';
+            restSlider.addEventListener('input', (e) => {
+                document.getElementById('restDurationValue').textContent = `${e.target.value}s`;
+            });
+            restSlider.addEventListener('change', async (e) => {
+                settings.restDuration = parseInt(e.target.value);
+                await Storage.saveSettings(settings);
+            });
+        }
+
+        // Rep pattern change handler
+        const repPatternSelect = document.getElementById('settingRepPattern');
+        if (repPatternSelect && !repPatternSelect.dataset.bound) {
+            repPatternSelect.dataset.bound = 'true';
+            repPatternSelect.addEventListener('change', async (e) => {
+                settings.repPattern = e.target.value;
+                await Storage.saveSettings(settings);
+                updateExerciseList();
+            });
+        }
+
+        // Rolling plank toggle handler
+        const rollingPlankToggle = document.getElementById('settingRollingPlank');
+        if (rollingPlankToggle && !rollingPlankToggle.dataset.bound) {
+            rollingPlankToggle.dataset.bound = 'true';
+            rollingPlankToggle.addEventListener('change', async (e) => {
+                settings.rollingPlank = e.target.checked;
+                await Storage.saveSettings(settings);
+            });
+        }
     }
 
     // Setup workout page
@@ -533,6 +588,10 @@ const App = (() => {
             btnContainer.innerHTML = `
                 <button class="btn btn-primary" id="finishSession">Finish Session</button>
                 <button class="btn btn-secondary" id="logPainAfterComplete">Log Pain Level</button>
+                <div class="level-up-link">
+                    <span>Felt easy?</span>
+                    <button class="btn-link" id="showLevelUp">Level Up →</button>
+                </div>
             `;
         } else if (nextExercise) {
             btnContainer.innerHTML = `
@@ -540,6 +599,10 @@ const App = (() => {
                     Continue: ${nextExercise.name}${nextExercise.side ? ` (${nextExercise.side})` : ''} →
                 </button>
                 <button class="btn btn-secondary" id="backToExercises">Back to Exercises</button>
+                <div class="level-up-link">
+                    <span>Felt easy?</span>
+                    <button class="btn-link" id="showLevelUp">Level Up →</button>
+                </div>
             `;
         } else {
             btnContainer.innerHTML = `
@@ -595,6 +658,96 @@ const App = (() => {
                 navigateTo('pain-log');
             });
         }
+
+        // Level up link handler
+        const levelUpBtn = btnContainer.querySelector('#showLevelUp');
+        if (levelUpBtn) {
+            levelUpBtn.addEventListener('click', () => showLevelUpModal());
+        }
+    }
+
+    // Show level up modal with progression options
+    function showLevelUpModal() {
+        const currentHold = settings.holdDuration || 10;
+        const currentPattern = settings.repPattern || '5-3-1';
+
+        // Calculate next options
+        const nextHold = Math.min(currentHold + 2, 60);
+        const patterns = ['3-2-1', '5-3-1', '8-5-3', '10-8-6', '1'];
+        const currentPatternIdx = patterns.indexOf(currentPattern);
+        const nextPattern = currentPatternIdx < patterns.length - 1 ? patterns[currentPatternIdx + 1] : null;
+
+        let optionsHtml = '';
+
+        if (currentHold < 60) {
+            optionsHtml += `<button class="btn btn-secondary level-option" data-action="hold" data-value="${nextHold}">
+                ⏱️ Increase holds to ${nextHold}s
+            </button>`;
+        }
+
+        if (nextPattern && nextPattern !== '1') {
+            optionsHtml += `<button class="btn btn-secondary level-option" data-action="pattern" data-value="${nextPattern}">
+                📈 Try ${nextPattern} rep pattern
+            </button>`;
+        }
+
+        if (nextPattern === '1' || currentPattern === '10-8-6') {
+            optionsHtml += `<button class="btn btn-secondary level-option" data-action="challenge">
+                🏆 Challenge Mode (1 × 60s)
+            </button>`;
+        }
+
+        if (!settings.rollingPlank) {
+            optionsHtml += `<button class="btn btn-secondary level-option" data-action="rolling">
+                🔄 Try Rolling Plank
+            </button>`;
+        }
+
+        optionsHtml += `<button class="btn btn-ghost" id="closeLevelUp">Maybe Later</button>`;
+
+        // Create modal overlay
+        const modalHtml = `
+            <div class="level-up-modal" id="levelUpModal">
+                <div class="level-up-content">
+                    <h3>🚀 Level Up!</h3>
+                    <p class="level-up-current">Current: ${currentPattern} × ${currentHold}s</p>
+                    <div class="level-up-options">${optionsHtml}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('levelUpModal');
+
+        // Handle option clicks
+        modal.querySelectorAll('.level-option').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const action = btn.dataset.action;
+
+                if (action === 'hold') {
+                    settings.holdDuration = parseInt(btn.dataset.value);
+                } else if (action === 'pattern') {
+                    settings.repPattern = btn.dataset.value;
+                } else if (action === 'challenge') {
+                    settings.repPattern = '1';
+                    settings.holdDuration = 60;
+                } else if (action === 'rolling') {
+                    settings.rollingPlank = true;
+                }
+
+                await Storage.saveSettings(settings);
+                modal.remove();
+                showToast('Settings updated! 💪');
+                updateExerciseList();
+            });
+        });
+
+        // Close button
+        modal.querySelector('#closeLevelUp').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
     }
 
     // Update workout UI on tick
