@@ -102,9 +102,11 @@ const Timer = (() => {
         workoutComplete: () => vibrate([200, 100, 200, 100, 400])
     };
 
-    // Speech synthesis for instructions
+    // Speech synthesis for instructions (optional - off by default)
     function speak(text, priority = false) {
+        // Voice announcements require both sound AND voice to be enabled
         if (!state.callbacks.settings?.soundEnabled) return;
+        if (!state.callbacks.settings?.voiceEnabled) return;
 
         if ('speechSynthesis' in window) {
             // Cancel previous if priority

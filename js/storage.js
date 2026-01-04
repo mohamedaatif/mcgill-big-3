@@ -233,6 +233,7 @@ const Storage = (() => {
             reminderTime: '08:00',
             darkMode: true,
             soundEnabled: true,
+            voiceEnabled: false,
             vibrationEnabled: true
         };
     }

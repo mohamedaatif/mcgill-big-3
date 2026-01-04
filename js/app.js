@@ -211,6 +211,7 @@ const App = (() => {
             settingReminderTime: settings.reminderTime,
             settingDarkMode: settings.darkMode,
             settingSounds: settings.soundEnabled,
+            settingVoice: settings.voiceEnabled,
             settingVibration: settings.vibrationEnabled
         };
 
@@ -324,6 +325,7 @@ const App = (() => {
             holdDuration: isBadDay ? 5 : settings.holdDuration,
             restDuration: settings.restDuration,
             soundEnabled: settings.soundEnabled,
+            voiceEnabled: settings.voiceEnabled,
             vibrationEnabled: settings.vibrationEnabled
         }, {
             onTick: (data) => updateWorkoutUI(data),
@@ -837,6 +839,7 @@ const App = (() => {
             'settingReminderTime',
             'settingDarkMode',
             'settingSounds',
+            'settingVoice',
             'settingVibration'
         ];
 
@@ -880,6 +883,7 @@ const App = (() => {
             reminderTime: document.getElementById('settingReminderTime').value,
             darkMode: document.getElementById('settingDarkMode').checked,
             soundEnabled: document.getElementById('settingSounds').checked,
+            voiceEnabled: document.getElementById('settingVoice').checked,
             vibrationEnabled: document.getElementById('settingVibration').checked
         };
 
