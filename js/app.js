@@ -173,15 +173,41 @@ const App = (() => {
         return new Date().toISOString().split('T')[0];
     }
 
-    // Update exercise list - now with individual start buttons
+    // Update exercise list - grouped for bilateral exercises
     function updateExerciseList() {
         const isBadDay = elements.badDayMode.checked;
         const level = isBadDay ? Exercises.getBadDayLevel() : Exercises.getLevel(settings.level);
         const exercises = Exercises.getAllExercises();
 
-        let html = '';
+        // Group exercises: Curl-Up (single), Side Plank (L+R), Bird-Dog (L+R)
+        const groupedExercises = [];
+        const seen = new Set();
+
         exercises.forEach(ex => {
-            const isDone = todayProgress[ex.id];
+            const baseId = ex.id.replace('-left', '').replace('-right', '');
+
+            if (!seen.has(baseId)) {
+                seen.add(baseId);
+                const isBilateral = ex.bilateral;
+                const leftId = isBilateral ? `${baseId}-left` : ex.id;
+
+                groupedExercises.push({
+                    id: leftId,
+                    baseId: baseId,
+                    name: ex.name,
+                    icon: ex.icon,
+                    isBilateral: isBilateral,
+                    label: isBilateral ? `${ex.name} (Both Sides)` : ex.name
+                });
+            }
+        });
+
+        let html = '';
+        groupedExercises.forEach(ex => {
+            let isDone = ex.isBilateral
+                ? todayProgress[`${ex.baseId}-left`] && todayProgress[`${ex.baseId}-right`]
+                : todayProgress[ex.id];
+
             const statusClass = isDone ? 'done' : '';
             const statusIcon = isDone ? '✅' : '○';
             const buttonText = isDone ? 'Done' : 'Start';
@@ -192,7 +218,7 @@ const App = (() => {
                     <div class="exercise-status-icon">${statusIcon}</div>
                     <div class="exercise-icon">${ex.icon}</div>
                     <div class="exercise-info">
-                        <div class="exercise-name">${ex.name}${ex.side ? ` (${ex.side})` : ''}</div>
+                        <div class="exercise-name">${ex.label}</div>
                         <div class="exercise-detail">${level.pyramid.join('-')} reps × ${level.holdDuration}s holds</div>
                     </div>
                     <button class="btn btn-sm ${buttonClass}" data-start-exercise="${ex.id}" ${isDone ? 'disabled' : ''}>
@@ -202,9 +228,10 @@ const App = (() => {
             `;
         });
 
-        // Add overall progress summary
-        const completedCount = Object.values(todayProgress).filter(v => v).length;
-        const totalCount = exercises.length;
+        const completedCount = groupedExercises.filter(ex =>
+            ex.isBilateral ? (todayProgress[`${ex.baseId}-left`] && todayProgress[`${ex.baseId}-right`]) : todayProgress[ex.id]
+        ).length;
+        const totalCount = groupedExercises.length;
         const progressPercent = (completedCount / totalCount) * 100;
 
         html = `
@@ -221,12 +248,10 @@ const App = (() => {
 
         elements.exerciseList.innerHTML = html;
 
-        // Add click handlers for start buttons
         document.querySelectorAll('[data-start-exercise]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const exerciseId = btn.dataset.startExercise;
-                startSingleExercise(exerciseId);
+                startSingleExercise(btn.dataset.startExercise);
             });
         });
     }
@@ -433,35 +458,62 @@ const App = (() => {
     async function onSingleExerciseComplete(data) {
         workoutInProgress = false;
 
-        // Mark this exercise as done
+        // Mark this exercise as done (both sides for bilateral)
         if (currentExerciseId) {
-            todayProgress[currentExerciseId] = true;
+            const exercise = Exercises.getExercise(currentExerciseId);
+            if (exercise && exercise.bilateral) {
+                // Mark both sides done
+                const baseId = currentExerciseId.replace('-left', '').replace('-right', '');
+                todayProgress[`${baseId}-left`] = true;
+                todayProgress[`${baseId}-right`] = true;
+            } else {
+                todayProgress[currentExerciseId] = true;
+            }
         }
 
-        // Check if there's a next exercise
-        const nextExercise = Exercises.getNextExercise(currentExerciseId);
-        const completedCount = Object.values(todayProgress).filter(v => v).length;
-        const totalCount = Exercises.getAllExercises().length;
-        const allDone = completedCount === totalCount;
+        // Get grouped exercise count (3: Curl-Up, Side Plank, Bird-Dog)
+        const exercises = Exercises.getAllExercises();
+        const baseIds = new Set();
+        exercises.forEach(ex => baseIds.add(ex.id.replace('-left', '').replace('-right', '')));
 
-        // Show complete screen with Continue option
+        const completedGroups = Array.from(baseIds).filter(baseId => {
+            const leftDone = todayProgress[`${baseId}-left`];
+            const rightDone = todayProgress[`${baseId}-right`];
+            const singleDone = todayProgress[baseId];
+            return (leftDone && rightDone) || singleDone || todayProgress[`${baseId}-left`] === undefined && todayProgress[baseId];
+        }).length;
+
+        // Simpler count based on actual grouped structure
+        const groupedDone = ['curl-up', 'side-plank', 'bird-dog'].filter(baseId => {
+            if (baseId === 'curl-up') return todayProgress['curl-up'];
+            return todayProgress[`${baseId}-left`] && todayProgress[`${baseId}-right`];
+        }).length;
+
+        const totalCount = 3; // Curl-Up, Side Plank, Bird-Dog
+        const allDone = groupedDone === totalCount;
+
+        // Get next grouped exercise (skip the pair we just did)
+        const currentBase = currentExerciseId.replace('-left', '').replace('-right', '');
+        const groupOrder = ['curl-up', 'side-plank-left', 'bird-dog-left'];
+        const currentIdx = groupOrder.findIndex(id => id.replace('-left', '') === currentBase);
+        const nextExercise = currentIdx < groupOrder.length - 1 ? Exercises.getExercise(groupOrder[currentIdx + 1]) : null;
+
+        // Show complete screen
         elements.workoutActive.classList.add('hidden');
         elements.workoutComplete.classList.remove('hidden');
 
         const exercise = Exercises.getExercise(currentExerciseId);
         document.getElementById('completeDuration').textContent = Timer.formatTime(data.duration);
-        document.getElementById('completeExercises').textContent = `${completedCount}/${totalCount}`;
+        document.getElementById('completeExercises').textContent = `${groupedDone}/${totalCount}`;
 
-        // Update message based on progress
         if (allDone) {
             document.getElementById('completeMessage').textContent = '🎉 All exercises complete! Great job caring for your spine today.';
         } else {
-            document.getElementById('completeMessage').textContent = `${exercise.name} complete! ${totalCount - completedCount} exercises remaining.`;
+            const remaining = totalCount - groupedDone;
+            document.getElementById('completeMessage').textContent = `${exercise.name} complete! ${remaining} exercise${remaining > 1 ? 's' : ''} remaining.`;
         }
 
-        // Update complete buttons with Continue to Next
         updateCompleteButtons(nextExercise, allDone);
-
         currentExerciseId = null;
     }
 

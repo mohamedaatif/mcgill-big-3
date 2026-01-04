@@ -233,7 +233,8 @@ const Exercises = (() => {
         };
     }
 
-    // Generate workout plan for a SINGLE exercise
+    // Generate workout plan for a SINGLE exercise (or bilateral pair)
+    // For bilateral exercises (side-plank, bird-dog), this generates L→R within each set
     function generateSingleExercisePlan(exerciseId, levelId, isBadDay = false) {
         const level = isBadDay ? BAD_DAY_LEVEL : getLevel(levelId);
         const exercise = getExercise(exerciseId);
@@ -242,16 +243,43 @@ const Exercises = (() => {
 
         const plan = [];
 
+        // Check if this is a bilateral exercise (has a pair)
+        const isBilateral = exercise.bilateral;
+        let pairExercise = null;
+
+        if (isBilateral) {
+            // Find the pair (e.g., side-plank-left → side-plank-right)
+            const baseId = exerciseId.replace('-left', '').replace('-right', '');
+            const isLeft = exerciseId.endsWith('-left');
+            const pairId = isLeft ? `${baseId}-right` : `${baseId}-left`;
+            pairExercise = getExercise(pairId);
+        }
+
         // For each set in the pyramid (e.g., 5-3-1)
         level.pyramid.forEach((reps, setIndex) => {
+            // Add this side
             plan.push({
                 exercise: exercise,
                 setNumber: setIndex + 1,
                 totalSets: level.pyramid.length,
                 reps: reps,
                 holdDuration: level.holdDuration,
-                isLastSet: setIndex === level.pyramid.length - 1
+                isLastSet: setIndex === level.pyramid.length - 1 && !pairExercise,
+                phase: 'primary'
             });
+
+            // If bilateral, add the other side immediately after (before rest)
+            if (pairExercise) {
+                plan.push({
+                    exercise: pairExercise,
+                    setNumber: setIndex + 1,
+                    totalSets: level.pyramid.length,
+                    reps: reps,
+                    holdDuration: level.holdDuration,
+                    isLastSet: setIndex === level.pyramid.length - 1,
+                    phase: 'pair'
+                });
+            }
         });
 
         return {
@@ -259,6 +287,7 @@ const Exercises = (() => {
             exerciseId: exerciseId,
             exercises: plan,
             totalSets: level.pyramid.length,
+            isBilateral: isBilateral,
             estimatedDuration: calculateDuration(plan, level.holdDuration, 10)
         };
     }
