@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McGill Big 3 - Taut Cable Chronometry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0b0d;
+            --cable-steel: #2a2d34;
+            --tension-hold: #ff9d00;
+            --tension-rest: #00e5ff;
+            --text-main: #f0f0f0;
+            --text-dim: #5c626e;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --cable-shadow: rgba(0,0,0,0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Taut Cable Background Elements */
+        .cable-system {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 10%;
+            pointer-events: none;
+        }
+
+        .cable {
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                transparent, 
+                var(--cable-steel) 20%, 
+                var(--cable-steel) 80%, 
+                transparent
+            );
+            box-shadow: 2px 0 5px var(--cable-shadow);
+            opacity: 0.3;
+        }
+
+        /* Main Container */
+        .viewport {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 24px;
+            position: relative;
+        }
+
+        /* Header Branding */
+        header {
+            margin-bottom: 60px;
+        }
+
+        .workout-title {
+            font-weight: 800;
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .exercise-name {
+            font-weight: 800;
+            font-size: 2.4rem;
+            line-height: 1;
+            color: var(--text-main);
+        }
+
+        /* Chronometry Section */
+        .chronometer {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .cable-gauge {
+            position: relative;
+            height: 320px;
+            width: 100%;
+            background: rgba(255,255,255,0.02);
+            border-left: 1px solid rgba(255,255,255,0.05);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .cable-core {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: #15171a;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .tension-sleeve {
+            width: 100%;
+            background: var(--tension-hold);
+            height: 0%;
+            transition: height 0.1s linear, background 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 157, 0, 0.2);
+        }
+
+        .tension-sleeve::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+        }
+
+        .timer-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-mono);
+            font-size: 7rem;
+            font-weight: 700;
+            color: var(--text-main);
+            z-index: 10;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        /* Meta Data */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            border-top: 1px solid var(--cable-steel);
+            padding-top: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 16px;
+            height: 80px;
+        }
+
+        .btn-main {
+            flex-grow: 2;
+            background: var(--text-main);
+            border: none;
+            border-radius: 0;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn-main:active {
+            transform: scale(0.97);
+        }
+
+        .btn-reset {
+            flex-grow: 1;
+            background: transparent;
+            border: 1px solid var(--cable-steel);
+            color: var(--text-main);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+
+        /* State Classes */
+        .state-rest .tension-sleeve {
+            background: var(--tension-rest);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        }
+
+        .state-rest .timer-display {
+            color: var(--tension-rest);
+        }
+
+        .vibrate {
+            animation: vibrate 0.1s infinite;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(-50%, -50%) translate(1px, 1px); }
+            25% { transform: translate(-50%, -50%) translate(-1px, -1px); }
+            50% { transform: translate(-50%, -50%) translate(1px, -1px); }
+            75% { transform: translate(-50%, -50%) translate(-1px, 1px); }
+            100% { transform: translate(-50%, -50%) translate(1px, 1px); }
+        }
+
+        .stage-indicator {
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.5em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cable-system">
+        <div class="cable"></div>
+        <div class="cable"></div>
+        <div class="cable"></div>
+    </div>
+
+    <main class="viewport" id="app">
+        <header>
+            <p class="workout-title">Core Stability / McGill Big 3</p>
+            <h1 class="exercise-name" id="exercise-label">BIRD DOG</h1>
+        </header>
+
+        <section class="chronometer" id="chronometer-wrap">
+            <div class="stage-indicator" id="stage-text">Tension Loading</div>
+            <div class="cable-gauge">
+                <div class="cable-core"></div>
+                <div class="tension-sleeve" id="sleeve"></div>
+                <div class="timer-display" id="timer">10</div>
+            </div>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="stat-label">Current Rep</p>
+                <p class="stat-value" id="rep-count">01 / 06</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Phase</p>
+                <p class="stat-value" id="phase-label">HOLD</p>
+            </div>
+        </div>
+
+        <footer class="controls">
+            <button class="btn-main" id="start-btn">Initiate</button>
+            <button class="btn-reset" id="reset-btn">Reset</button>
+        </footer>
+    </main>
+
+    <script>
+        const HOLD_TIME = 10;
+        const REST_TIME = 3;
+        const TOTAL_REPS = 6;
+
+        let timeLeft = HOLD_TIME;
+        let currentRep = 1;
+        let isHolding = true;
+        let isRunning = false;
+        let timerInterval = null;
+
+        const timerEl = document.getElementById('timer');
+        const sleeveEl = document.getElementById('sleeve');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const phaseLabel = document.getElementById('phase-label');
+        const repLabel = document.getElementById('rep-count');
+        const appWrap = document.getElementById('app');
+        const stageText = document.getElementById('stage-text');
+        const timerText = document.getElementById('timer');
+
+        function updateUI() {
+            timerEl.innerText = Math.ceil(timeLeft).toString().padStart(2, '0');
+            const total = isHolding ? HOLD_TIME : REST_TIME;
+            const percentage = ((total - timeLeft) / total) * 100;
+            sleeveEl.style.height = `${percentage}%`;
+            
+            repLabel.innerText = `${currentRep.toString().padStart(2, '0')} / ${TOTAL_REPS.toString().padStart(2, '0')}`;
+            
+            if (isHolding) {
+                appWrap.classList.remove('state-rest');
+                phaseLabel.innerText = 'HOLD';
+                stageText.innerText = 'Tension Loading';
+                document.documentElement.style.setProperty('--tension-hold', '#ff9d00');
+                if (isRunning) timerText.classList.add('vibrate');
+            } else {
+                appWrap.classList.add('state-rest');
+                phaseLabel.innerText = 'REST';
+                stageText.innerText = 'System Release';
+                timerText.classList.remove('vibrate');
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                startBtn.innerText = 'Resume';
+                timerText.classList.remove('vibrate');
+            } else {
+                startBtn.innerText = 'Suspend';
+                timerInterval = setInterval(() => {
+                    timeLeft -= 0.1;
+                    if (timeLeft <= 0) {
+                        handlePhaseSwitch();
+                    }
+                    updateUI();
+                }, 100);
+            }
+            isRunning = !isRunning;
+        }
+
+        function handlePhaseSwitch() {
+            if (isHolding) {
+                isHolding = false;
+                timeLeft = REST_TIME;
+            } else {
+                isHolding = true;
+                timeLeft = HOLD_TIME;
+                currentRep++;
+                if (currentRep > TOTAL_REPS) {
+                    resetTimer();
+                    alert("Sequence Complete. Maintain Neutral Spine.");
+                }
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isHolding = true;
+            timeLeft = HOLD_TIME;
+            currentRep = 1;
+            startBtn.innerText = 'Initiate';
+            timerText.classList.remove('vibrate');
+            updateUI();
+        }
+
+        startBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Initial UI state
+        updateUI();
+    </script>
+</body>
+</html>

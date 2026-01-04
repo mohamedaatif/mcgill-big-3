@@ -754,33 +754,38 @@ const App = (() => {
     function updateWorkoutUI(data) {
         elements.timerValue.textContent = data.time;
 
+        // Trigger tick animation each second
+        triggerTickAnimation();
+
         // Update progress ring
         const circumference = 565.48; // 2 * PI * 90
         const progress = Timer.getProgressPercent();
         const offset = circumference - (progress / 100) * circumference;
         elements.timerProgress.style.strokeDashoffset = offset;
 
-        // Update reps
-        elements.repCurrent.textContent = data.rep;
-        elements.repTotal.textContent = data.totalReps;
+        // Update rep dots (generate on first call, update on subsequent)
+        const repDotsContainer = document.getElementById('repDots');
+        if (repDotsContainer && repDotsContainer.children.length !== data.totalReps) {
+            generateRepDots(data.totalReps, data.rep);
+        } else {
+            updateRepDots(data.rep, data.totalReps);
+        }
     }
 
-    // Update phase UI
+    // Update phase UI - unified timer display
     function updatePhaseUI(data) {
-        const phaseText = elements.phaseIndicator.querySelector('.phase-text');
+        const timerPhase = document.getElementById('timerPhase');
         const timerContainer = document.querySelector('.timer-ring-container');
 
         if (data.phase === 'hold') {
-            phaseText.textContent = 'HOLD';
-            phaseText.classList.remove('rest');
+            if (timerPhase) timerPhase.textContent = 'HOLD';
             elements.timerProgress.style.stroke = '#06b6d4';
             if (timerContainer) {
                 timerContainer.classList.add('phase-hold');
                 timerContainer.classList.remove('phase-rest');
             }
         } else if (data.phase === 'rest') {
-            phaseText.textContent = 'REST';
-            phaseText.classList.add('rest');
+            if (timerPhase) timerPhase.textContent = 'REST';
             elements.timerProgress.style.stroke = '#f59e0b';
             if (timerContainer) {
                 timerContainer.classList.add('phase-rest');
@@ -789,6 +794,37 @@ const App = (() => {
         }
 
         elements.timerLabel.textContent = 'seconds';
+    }
+
+    // Generate rep dots - call on workout start
+    function generateRepDots(totalReps, currentRep = 1) {
+        const container = document.getElementById('repDots');
+        if (!container) return;
+
+        let html = '';
+        for (let i = 1; i <= totalReps; i++) {
+            let className = 'rep-dot';
+            if (i < currentRep) className += ' completed';
+            else if (i === currentRep) className += ' current';
+            html += `<span class="${className}"></span>`;
+        }
+        container.innerHTML = html;
+    }
+
+    // Update rep dots on rep change
+    function updateRepDots(currentRep, totalReps) {
+        const dots = document.querySelectorAll('.rep-dot');
+        dots.forEach((dot, i) => {
+            dot.classList.remove('completed', 'current');
+            if (i + 1 < currentRep) dot.classList.add('completed');
+            else if (i + 1 === currentRep) dot.classList.add('current');
+        });
+    }
+
+    // Tick animation - pulse number on each second
+    function triggerTickAnimation() {
+        elements.timerValue.classList.add('tick');
+        setTimeout(() => elements.timerValue.classList.remove('tick'), 100);
     }
 
     // Update exercise UI
