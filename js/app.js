@@ -768,15 +768,18 @@ const App = (() => {
     // Update phase UI
     function updatePhaseUI(data) {
         const phaseText = elements.phaseIndicator.querySelector('.phase-text');
+        const timerContainer = document.querySelector('.timer-ring-container');
 
         if (data.phase === 'hold') {
             phaseText.textContent = 'HOLD';
             phaseText.classList.remove('rest');
             elements.timerProgress.style.stroke = '#06b6d4';
+            if (timerContainer) timerContainer.classList.remove('phase-rest');
         } else if (data.phase === 'rest') {
             phaseText.textContent = 'REST';
             phaseText.classList.add('rest');
             elements.timerProgress.style.stroke = '#f59e0b';
+            if (timerContainer) timerContainer.classList.add('phase-rest');
         }
 
         elements.timerLabel.textContent = 'seconds';

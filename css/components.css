@@ -635,6 +635,20 @@
     margin: var(--space-8) auto;
 }
 
+/* Outer glow container - changes with phase */
+.timer-ring-container::before {
+    content: '';
+    position: absolute;
+    inset: -15px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+    transition: background 0.5s ease;
+}
+
+.timer-ring-container.phase-rest::before {
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+}
+
 .timer-ring {
     width: 100%;
     height: 100%;
@@ -654,8 +668,13 @@
     stroke-linecap: round;
     stroke-dasharray: var(--timer-ring-circumference);
     stroke-dashoffset: var(--timer-ring-circumference);
-    transition: stroke-dashoffset 0.1s linear;
-    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.5));
+    transition: stroke-dashoffset 0.1s linear, filter 0.5s ease;
+    filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.6));
+}
+
+/* REST phase - amber glow */
+.phase-rest .timer-ring-progress {
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.6));
 }
 
 .timer-content {
@@ -697,11 +716,36 @@
     font-weight: var(--font-bold);
     letter-spacing: 0.1em;
     border-radius: var(--radius-full);
-    animation: ringPulse 2s infinite;
+    animation: pulseCyan 2s infinite;
 }
 
 .phase-text.rest {
     background: var(--gradient-secondary);
+    animation: pulseAmber 2s infinite;
+}
+
+@keyframes pulseCyan {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 15px 5px rgba(6, 182, 212, 0.2);
+    }
+}
+
+@keyframes pulseAmber {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 15px 5px rgba(245, 158, 11, 0.2);
+    }
 }
 
 /* ===== Rep Progress ===== */
