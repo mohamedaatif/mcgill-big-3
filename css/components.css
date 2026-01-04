@@ -635,19 +635,7 @@
     margin: var(--space-8) auto;
 }
 
-/* Outer glow container - changes with phase */
-.timer-ring-container::before {
-    content: '';
-    position: absolute;
-    inset: -15px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
-    transition: background 0.5s ease;
-}
-
-.timer-ring-container.phase-rest::before {
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
-}
+/* Note: ::before and ::after animations are in pages.css */
 
 .timer-ring {
     width: 100%;
