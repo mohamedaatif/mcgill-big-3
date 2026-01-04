@@ -250,9 +250,7 @@ const Timer = (() => {
 
         // Countdown tick
         if (state.currentTime > 0) {
-            state.currentTime--;
-
-            // Play distinct countdown sounds for last 3 seconds (escalating intensity)
+            // Play countdown sounds BEFORE decrementing (so "3" sound plays when showing "3")
             if (state.currentTime === 3) {
                 if (settings.soundEnabled) sounds.countdown3();
                 if (settings.vibrationEnabled) vibrations.countdown3();
@@ -263,6 +261,8 @@ const Timer = (() => {
                 if (settings.soundEnabled) sounds.countdown1();
                 if (settings.vibrationEnabled) vibrations.countdown1();
             }
+
+            state.currentTime--;
 
             state.callbacks.onTick({
                 time: state.currentTime,
