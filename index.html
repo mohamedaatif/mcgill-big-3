@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description"
+        content="Track your McGill Big 3 exercises for sciatica recovery with guided timers, progression tracking, and pain logging.">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>McGill Big 3 - Spine Recovery Tracker</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
+
+    <link rel="stylesheet" href="css/design-tokens.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="nav-item active" data-page="workout">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12,6 12,12 16,14" />
+                </svg>
+                <span>Workout</span>
+            </button>
+            <button class="nav-item" data-page="progress">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v18h18" />
+                    <path d="M18 17V9" />
+                    <path d="M13 17V5" />
+                    <path d="M8 17v-3" />
+                </svg>
+                <span>Progress</span>
+            </button>
+            <button class="nav-item" data-page="pain-log">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+                <span>Pain Log</span>
+            </button>
+            <button class="nav-item" data-page="habits">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M2 12h20" />
+                    <circle cx="12" cy="12" r="4" />
+                </svg>
+                <span>Habits</span>
+            </button>
+            <button class="nav-item" data-page="recovery">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+                <span>Recovery</span>
+            </button>
+        </nav>
+
+        <!-- Settings Floating Button -->
+        <button class="settings-fab" id="settingsFab" data-page="settings" title="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+        </button>
+
+        <!-- Pages Container -->
+        <main class="pages-container" id="pagesContainer">
+            <!-- Workout Page -->
+            <section class="page active" id="page-workout">
+                <header class="page-header">
+                    <h1 class="greeting" id="greeting">Good evening</h1>
+                    <p class="subtitle" id="subtitle">Ready for your McGill Big 3?</p>
+                </header>
+
+                <div class="consistency-card" id="consistencyCard">
+                    <div class="consistency-header">
+                        <span class="consistency-label">This Week</span>
+                        <span class="consistency-score" id="weeklyScore">0/7 days</span>
+                    </div>
+                    <div class="consistency-bar">
+                        <div class="consistency-fill" id="consistencyFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="level-badge" id="levelBadge">
+                    <span class="level-icon">🌱</span>
+                    <span class="level-text">Beginner</span>
+                    <span class="level-detail">3-2-1 × 5s holds</span>
+                </div>
+
+                <div class="bad-day-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="badDayMode">
+                        <span class="toggle-text">😓 Bad Day Mode</span>
+                    </label>
+                </div>
+
+                <div class="workout-preview" id="workoutPreview">
+                    <h2 class="section-title">Today's Exercises</h2>
+                    <div class="exercise-list" id="exerciseList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-large" id="startWorkout">
+                    <span class="btn-icon">▶</span>
+                    Start Workout
+                </button>
+
+                <!-- Workout Active View (hidden by default) -->
+                <div class="workout-active hidden" id="workoutActive">
+                    <div class="exercise-header">
+                        <h2 class="exercise-name" id="currentExerciseName">Curl-Up</h2>
+                        <p class="exercise-side" id="currentSide"></p>
+                    </div>
+
+                    <div class="timer-ring-container">
+                        <svg class="timer-ring" viewBox="0 0 200 200">
+                            <circle class="timer-ring-bg" cx="100" cy="100" r="90" />
+                            <circle class="timer-ring-progress" id="timerProgress" cx="100" cy="100" r="90" />
+                        </svg>
+                        <div class="timer-content">
+                            <span class="timer-value" id="timerValue">10</span>
+                            <span class="timer-label" id="timerLabel">seconds</span>
+                        </div>
+                    </div>
+
+                    <div class="rep-progress">
+                        <span class="rep-current" id="repCurrent">1</span>
+                        <span class="rep-separator">/</span>
+                        <span class="rep-total" id="repTotal">5</span>
+                        <span class="rep-label">reps</span>
+                    </div>
+
+                    <div class="phase-indicator" id="phaseIndicator">
+                        <span class="phase-text">HOLD</span>
+                    </div>
+
+                    <div class="workout-controls">
+                        <button class="btn btn-secondary" id="pauseWorkout">Pause</button>
+                        <button class="btn btn-danger" id="stopWorkout">Stop</button>
+                    </div>
+                </div>
+
+                <!-- Workout Complete View -->
+                <div class="workout-complete hidden" id="workoutComplete">
+                    <div class="celebration-icon">🎉</div>
+                    <h2 class="complete-title">Workout Complete!</h2>
+                    <p class="complete-message" id="completeMessage">Great job caring for your spine today.</p>
+                    <div class="complete-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="completeDuration">0:00</span>
+                            <span class="stat-label">Duration</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="completeExercises">3</span>
+                            <span class="stat-label">Exercises</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="logPainAfter">Log Pain Level</button>
+                    <button class="btn btn-secondary" id="doneWorkout">Done</button>
+                </div>
+            </section>
+
+            <!-- Progress Page -->
+            <section class="page" id="page-progress">
+                <header class="page-header">
+                    <h1>Your Progress</h1>
+                </header>
+
+                <div class="progress-section">
+                    <h2 class="section-title">Consistency Calendar</h2>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Generated by JS -->
+                    </div>
+                    <div class="calendar-legend">
+                        <span class="legend-item"><span class="legend-box none"></span> No data</span>
+                        <span class="legend-item"><span class="legend-box partial"></span> Partial</span>
+                        <span class="legend-item"><span class="legend-box complete"></span> Complete</span>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h2 class="section-title">Pain Trend</h2>
+                    <div class="chart-container" id="painChart">
+                        <canvas id="painChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h2 class="section-title">Progression Journey</h2>
+                    <div class="journey-timeline" id="journeyTimeline">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h2 class="section-title">Insights</h2>
+                    <div class="insights-list" id="insightsList">
+                        <div class="insight-card">
+                            <span class="insight-icon">💡</span>
+                            <p class="insight-text">Complete more workouts to see personalized insights.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pain Log Page -->
+            <section class="page" id="page-pain-log">
+                <header class="page-header">
+                    <h1>Pain Log</h1>
+                </header>
+
+                <div class="pain-entry-form">
+                    <h2 class="section-title">How are you feeling?</h2>
+
+                    <div class="pain-scale">
+                        <label class="scale-label">Pain Level</label>
+                        <div class="scale-slider">
+                            <input type="range" id="painLevel" min="0" max="10" value="0">
+                            <div class="scale-value" id="painLevelValue">0</div>
+                        </div>
+                        <div class="scale-labels">
+                            <span>None</span>
+                            <span>Severe</span>
+                        </div>
+                    </div>
+
+                    <div class="symptom-types">
+                        <label class="scale-label">Symptoms</label>
+                        <div class="symptom-buttons">
+                            <button class="symptom-btn" data-symptom="pain">Pain</button>
+                            <button class="symptom-btn" data-symptom="numbness">Numbness</button>
+                            <button class="symptom-btn" data-symptom="tingling">Tingling</button>
+                            <button class="symptom-btn" data-symptom="weakness">Weakness</button>
+                        </div>
+                    </div>
+
+                    <div class="pain-location">
+                        <label class="scale-label">Location</label>
+                        <div class="location-buttons">
+                            <button class="location-btn" data-location="lower-back">Lower Back</button>
+                            <button class="location-btn" data-location="left-leg">Left Leg</button>
+                            <button class="location-btn" data-location="right-leg">Right Leg</button>
+                            <button class="location-btn" data-location="buttock">Buttock</button>
+                            <button class="location-btn" data-location="foot">Foot</button>
+                        </div>
+                    </div>
+
+                    <div class="pain-activity">
+                        <label class="scale-label">What were you doing?</label>
+                        <input type="text" id="painActivity" class="text-input"
+                            placeholder="e.g., Sitting at desk, Walking...">
+                    </div>
+
+                    <div class="pain-notes">
+                        <label class="scale-label">Notes (optional)</label>
+                        <textarea id="painNotes" class="text-input" rows="2"
+                            placeholder="Any observations..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" id="savePainEntry">Save Entry</button>
+                </div>
+
+                <div class="pain-history">
+                    <h2 class="section-title">Recent Entries</h2>
+                    <div class="history-list" id="painHistoryList">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Habits Page -->
+            <section class="page" id="page-habits">
+                <header class="page-header">
+                    <h1>Daily Habits</h1>
+                </header>
+
+                <!-- Sitting Break Timer -->
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <h2 class="habit-title">🪑 Sitting Break Timer</h2>
+                        <span class="habit-badge">20-8-2</span>
+                    </div>
+                    <p class="habit-desc">Sit 20 min → Stand 8 min → Move 2 min</p>
+                    <div class="sitting-timer" id="sittingTimer">
+                        <div class="sitting-phase" id="sittingPhase">SITTING</div>
+                        <div class="sitting-time" id="sittingTime">20:00</div>
+                        <div class="sitting-controls">
+                            <button class="btn btn-secondary" id="startSittingTimer">Start</button>
+                            <button class="btn btn-secondary hidden" id="resetSittingTimer">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Walking Tracker -->
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <h2 class="habit-title">🚶 Walking</h2>
+                        <span class="habit-goal" id="walkingGoal">Goal: 30 min</span>
+                    </div>
+                    <div class="walking-tracker">
+                        <div class="walking-today">
+                            <span class="walking-value" id="walkingToday">0</span>
+                            <span class="walking-label">min today</span>
+                        </div>
+                        <div class="walking-input">
+                            <input type="number" id="walkingMinutes" min="1" max="120" value="10" class="number-input">
+                            <button class="btn btn-secondary" id="addWalking">Add Walk</button>
+                        </div>
+                    </div>
+                    <div class="walking-tips">
+                        <p>💡 Short strides, good posture, arms swinging naturally</p>
+                    </div>
+                </div>
+
+                <!-- Nerve Flossing -->
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <h2 class="habit-title">🦵 Nerve Flossing</h2>
+                    </div>
+                    <p class="habit-desc">Gentle nerve mobilization exercises</p>
+                    <div class="nerve-floss-list">
+                        <button class="nerve-floss-item" id="startNerveFloss">
+                            <span class="floss-name">Seated Sciatic Nerve Floss</span>
+                            <span class="floss-reps">10-15 reps per side</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sleep Position -->
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <h2 class="habit-title">😴 Sleep Position</h2>
+                    </div>
+                    <div class="sleep-checklist">
+                        <label class="checklist-item">
+                            <input type="checkbox" id="sleepPillow">
+                            <span>Pillow between/under knees</span>
+                        </label>
+                        <label class="checklist-item">
+                            <input type="checkbox" id="sleepSide">
+                            <span>Slept on side or back</span>
+                        </label>
+                    </div>
+                    <div class="sleep-tips">
+                        <p><strong>Side sleeper:</strong> Pillow between knees</p>
+                        <p><strong>Back sleeper:</strong> Pillow under knees</p>
+                    </div>
+                </div>
+
+                <!-- Spine Hygiene -->
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <h2 class="habit-title">🧹 Spine Hygiene</h2>
+                    </div>
+                    <div class="hygiene-checklist">
+                        <label class="checklist-item">
+                            <input type="checkbox" data-hygiene="hip-hinge">
+                            <span>Used hip hinge when bending</span>
+                        </label>
+                        <label class="checklist-item">
+                            <input type="checkbox" data-hygiene="hydration">
+                            <span>Stayed hydrated (disc health)</span>
+                        </label>
+                        <label class="checklist-item">
+                            <input type="checkbox" data-hygiene="posture">
+                            <span>Maintained good posture</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recovery Page (NEW - McGill-based Diagnosis & Recovery) -->
+            <section class="page" id="page-recovery">
+                <header class="page-header">
+                    <h1>Recovery Guide</h1>
+                </header>
+
+                <!-- Quick Relief Button -->
+                <button class="quick-relief-btn" id="openReliefFinder">
+                    <span class="relief-icon">🩹</span>
+                    <span class="relief-text">
+                        <strong>Need Relief NOW?</strong>
+                        <small>Tap to find exercises for your specific pain</small>
+                    </span>
+                    <span class="relief-arrow">→</span>
+                </button>
+
+                <!-- Recovery Phase Status -->
+                <div class="recovery-phase-card" id="recoveryPhaseCard">
+                    <div class="phase-status">
+                        <span class="phase-icon" id="phaseIcon">🔄</span>
+                        <div class="phase-info">
+                            <h3 class="phase-name" id="phaseName">Not Assessed</h3>
+                            <p class="phase-description" id="phaseDescription">Complete the self-assessment to determine
+                                your recovery phase</p>
+                        </div>
+                    </div>
+                    <div class="phase-progress-bar">
+                        <div class="phase-segments">
+                            <div class="phase-segment acute" data-phase="acute">Acute</div>
+                            <div class="phase-segment subacute" data-phase="subacute">Subacute</div>
+                            <div class="phase-segment chronic" data-phase="chronic">Rehab</div>
+                            <div class="phase-segment recovered" data-phase="recovered">Resilient</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Self-Assessment Section -->
+                <div class="recovery-section">
+                    <h2 class="section-title">🔍 McGill Self-Assessment</h2>
+                    <p class="section-desc">Identify your specific pain triggers (based on Dr. Stuart McGill's
+                        methodology)</p>
+
+                    <button class="assessment-btn" id="startAssessment">
+                        <span class="assessment-icon">📋</span>
+                        <span class="assessment-text">
+                            <strong>Take Pain Trigger Assessment</strong>
+                            <small>5 min • Identify flexion/extension intolerance</small>
+                        </span>
+                        <span class="assessment-arrow">→</span>
+                    </button>
+
+                    <div class="assessment-result hidden" id="assessmentResult">
+                        <h3>Your Pain Profile</h3>
+                        <div class="intolerance-badges" id="intoleranceBadges">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="trigger-summary" id="triggerSummary">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Recovery Actions -->
+                <div class="recovery-section">
+                    <h2 class="section-title">⚡ Today's Recovery Actions</h2>
+                    <div class="recovery-actions" id="recoveryActions">
+                        <div class="action-card">
+                            <span class="action-icon">🚶</span>
+                            <div class="action-info">
+                                <strong>Walk 3x10 min</strong>
+                                <small>Pain-free walking builds endurance</small>
+                            </div>
+                            <input type="checkbox" class="action-check">
+                        </div>
+                        <div class="action-card">
+                            <span class="action-icon">🧊</span>
+                            <div class="action-info">
+                                <strong>Ice if acute (15-20 min)</strong>
+                                <small>Reduce inflammation</small>
+                            </div>
+                            <input type="checkbox" class="action-check">
+                        </div>
+                        <div class="action-card">
+                            <span class="action-icon">🛏️</span>
+                            <div class="action-info">
+                                <strong>Find pain-free positions</strong>
+                                <small>Rest in neutral spine positions</small>
+                            </div>
+                            <input type="checkbox" class="action-check">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movement Correction Library -->
+                <div class="recovery-section">
+                    <h2 class="section-title">📚 Movement Corrections</h2>
+                    <p class="section-desc">Replace aggravating movements with spine-sparing alternatives</p>
+
+                    <div class="movement-library">
+                        <div class="movement-card" data-movement="hip-hinge">
+                            <div class="movement-header">
+                                <span class="movement-icon">🔄</span>
+                                <h4>Hip Hinge (Bending)</h4>
+                            </div>
+                            <p class="movement-desc">Bend at hips, not spine. Keep back neutral.</p>
+                            <div class="movement-compare">
+                                <span class="bad">❌ Spine flexion</span>
+                                <span class="good">✅ Hip hinge</span>
+                            </div>
+                        </div>
+
+                        <div class="movement-card" data-movement="golfer-pickup">
+                            <div class="movement-header">
+                                <span class="movement-icon">⛳</span>
+                                <h4>Golfer's Pickup</h4>
+                            </div>
+                            <p class="movement-desc">For light objects: extend one leg back as counterweight.</p>
+                        </div>
+
+                        <div class="movement-card" data-movement="log-roll">
+                            <div class="movement-header">
+                                <span class="movement-icon">🛏️</span>
+                                <h4>Log Roll (Bed Exit)</h4>
+                            </div>
+                            <p class="movement-desc">Roll to side as one unit, push up with arms.</p>
+                        </div>
+
+                        <div class="movement-card" data-movement="abdominal-brace">
+                            <div class="movement-header">
+                                <span class="movement-icon">💪</span>
+                                <h4>Abdominal Brace</h4>
+                            </div>
+                            <p class="movement-desc">Engage core before any lift. Imagine bracing for a punch.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avoid List -->
+                <div class="recovery-section">
+                    <h2 class="section-title">🚫 Movements to Avoid</h2>
+                    <div class="avoid-list" id="avoidList">
+                        <div class="avoid-item flexion">
+                            <span class="avoid-icon">⚠️</span>
+                            <div class="avoid-info">
+                                <strong>Sit-ups & Crunches</strong>
+                                <small>High disc pressure, spine flexion</small>
+                            </div>
+                        </div>
+                        <div class="avoid-item flexion">
+                            <span class="avoid-icon">⚠️</span>
+                            <div class="avoid-info">
+                                <strong>Toe Touches</strong>
+                                <small>Loaded spine flexion</small>
+                            </div>
+                        </div>
+                        <div class="avoid-item flexion">
+                            <span class="avoid-icon">⚠️</span>
+                            <div class="avoid-info">
+                                <strong>Knees to Chest Stretch</strong>
+                                <small>Can aggravate disc issues</small>
+                            </div>
+                        </div>
+                        <div class="avoid-item extension">
+                            <span class="avoid-icon">⚠️</span>
+                            <div class="avoid-info">
+                                <strong>Cobra Stretch</strong>
+                                <small>Avoid if extension-intolerant</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recovery Timeline -->
+                <div class="recovery-section">
+                    <h2 class="section-title">📅 Recovery Timeline</h2>
+                    <div class="timeline-card">
+                        <div class="timeline-phase">
+                            <div class="timeline-marker acute"></div>
+                            <div class="timeline-content">
+                                <h4>Acute Phase (0-6 weeks)</h4>
+                                <ul>
+                                    <li>Find pain-free positions</li>
+                                    <li>Avoid aggravating movements</li>
+                                    <li>Short walks (10-15 min, 3x/day)</li>
+                                    <li>Start gentle McGill Big 3</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-phase">
+                            <div class="timeline-marker subacute"></div>
+                            <div class="timeline-content">
+                                <h4>Subacute Phase (6-12 weeks)</h4>
+                                <ul>
+                                    <li>Progress McGill Big 3 intensity</li>
+                                    <li>Increase walking duration</li>
+                                    <li>Add nerve gliding exercises</li>
+                                    <li>Focus on movement patterns</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-phase">
+                            <div class="timeline-marker chronic"></div>
+                            <div class="timeline-content">
+                                <h4>Rehabilitation (12+ weeks)</h4>
+                                <ul>
+                                    <li>Build endurance with Big 3</li>
+                                    <li>Add hip/glute strengthening</li>
+                                    <li>Gradually return to activities</li>
+                                    <li>Maintenance routine for life</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Page -->
+            <section class="page" id="page-settings">
+                <header class="page-header">
+                    <h1>Settings</h1>
+                </header>
+
+                <div class="settings-section">
+                    <h2 class="section-title">Workout Settings</h2>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Hold Duration (seconds)</label>
+                        <input type="number" id="settingHoldDuration" min="5" max="60" value="10" class="number-input">
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Rest Duration (seconds)</label>
+                        <input type="number" id="settingRestDuration" min="5" max="30" value="10" class="number-input">
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Current Level</label>
+                        <select id="settingLevel" class="select-input">
+                            <option value="beginner">Beginner (3-2-1 × 5s)</option>
+                            <option value="developing">Developing (5-3-1 × 8s)</option>
+                            <option value="standard" selected>Standard (5-3-1 × 10s)</option>
+                            <option value="advanced">Advanced (8-5-3 × 10s)</option>
+                            <option value="challenge">Challenge (60s holds)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">Daily Goals</h2>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Walking Goal (minutes)</label>
+                        <input type="number" id="settingWalkingGoal" min="10" max="120" value="30" class="number-input">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">Notifications</h2>
+
+                    <div class="setting-item toggle">
+                        <label class="setting-label">Workout Reminder</label>
+                        <label class="switch">
+                            <input type="checkbox" id="settingReminder">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Reminder Time</label>
+                        <input type="time" id="settingReminderTime" value="08:00" class="time-input">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">Appearance</h2>
+
+                    <div class="setting-item toggle">
+                        <label class="setting-label">Dark Mode</label>
+                        <label class="switch">
+                            <input type="checkbox" id="settingDarkMode" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item toggle">
+                        <label class="setting-label">Sound Effects</label>
+                        <label class="switch">
+                            <input type="checkbox" id="settingSounds" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item toggle">
+                        <label class="setting-label">Vibration</label>
+                        <label class="switch">
+                            <input type="checkbox" id="settingVibration" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">Data</h2>
+                    <button class="btn btn-secondary" id="exportData">Export Data</button>
+                    <button class="btn btn-danger" id="clearData">Clear All Data</button>
+                </div>
+
+                <div class="app-info">
+                    <p>McGill Big 3 Tracker v1.0</p>
+                    <p class="app-tagline">Building a resilient spine, one day at a time.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Nerve Floss Modal -->
+    <div class="modal hidden" id="nerveFlossModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Seated Sciatic Nerve Floss</h2>
+                <button class="modal-close" id="closeNerveFloss">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="nerve-floss-instructions">
+                    <ol>
+                        <li>Sit upright with feet flat on the floor</li>
+                        <li>Extend one leg straight while pointing toes away</li>
+                        <li>At the same time, bend your head down (chin to chest)</li>
+                        <li>Reverse: flex foot toward you, lift head up</li>
+                        <li>Repeat gently 10-15 times, then switch legs</li>
+                    </ol>
+                    <p class="caution">⚠️ Stop if symptoms worsen. This should feel like a gentle tug, not pain.</p>
+                </div>
+                <div class="floss-timer">
+                    <span class="floss-rep-count" id="flossRepCount">0</span>
+                    <span class="floss-rep-label">/ 15 reps</span>
+                </div>
+                <div class="floss-side" id="flossSide">Left Leg</div>
+                <button class="btn btn-primary" id="flossNextRep">Next Rep</button>
+                <button class="btn btn-secondary" id="flossSwitchSide">Switch to Right</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Relief Finder Modal -->
+    <div class="modal hidden" id="reliefFinderModal">
+        <div class="modal-content relief-modal">
+            <div class="modal-header">
+                <h2>🩹 Quick Relief Finder</h2>
+                <button class="modal-close" id="closeReliefFinder">&times;</button>
+            </div>
+            <div class="modal-body" id="reliefContent">
+                <!-- Content rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Modal -->
+    <div class="modal hidden" id="assessmentModal">
+        <div class="modal-content assessment-modal">
+            <div class="modal-header">
+                <h2>Pain Trigger Assessment</h2>
+                <button class="modal-close" onclick="Recovery.hideAssessmentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="assessment-progress-bar">
+                    <div class="assessment-progress" id="assessmentProgress"></div>
+                </div>
+                <p class="assessment-question-num" id="assessmentQuestionNum">Question 1 of 11</p>
+                <div id="assessmentQuestionContainer">
+                    <!-- Questions rendered by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast">
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/exercises.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/recovery.js"></script>
+    <script src="js/relief.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

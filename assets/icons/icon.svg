@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4"/>
+      <stop offset="100%" style="stop-color:#0891b2"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  
+  <!-- Spine representation - 3 vertebrae for Big 3 -->
+  <g transform="translate(256, 256)">
+    <!-- Top vertebra -->
+    <ellipse cx="0" cy="-80" rx="60" ry="25" fill="url(#primaryGrad)" opacity="0.9"/>
+    <ellipse cx="0" cy="-80" rx="45" ry="18" fill="url(#bgGrad)" opacity="0.3"/>
+    
+    <!-- Middle vertebra -->
+    <ellipse cx="0" cy="0" rx="70" ry="30" fill="url(#primaryGrad)"/>
+    <ellipse cx="0" cy="0" rx="52" ry="22" fill="url(#bgGrad)" opacity="0.3"/>
+    
+    <!-- Bottom vertebra -->
+    <ellipse cx="0" cy="80" rx="60" ry="25" fill="url(#primaryGrad)" opacity="0.9"/>
+    <ellipse cx="0" cy="80" rx="45" ry="18" fill="url(#bgGrad)" opacity="0.3"/>
+    
+    <!-- Connecting lines -->
+    <line x1="0" y1="-55" x2="0" y2="-25" stroke="url(#accentGrad)" stroke-width="8" stroke-linecap="round"/>
+    <line x1="0" y1="25" x2="0" y2="55" stroke="url(#accentGrad)" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Number 3 badge -->
+    <circle cx="70" cy="-70" r="35" fill="url(#accentGrad)"/>
+    <text x="70" y="-58" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white">3</text>
+  </g>
+  
+  <!-- Subtle glow effect -->
+  <circle cx="256" cy="256" r="120" fill="none" stroke="url(#primaryGrad)" stroke-width="2" opacity="0.3"/>
+</svg>
