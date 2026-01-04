@@ -31,8 +31,8 @@ const Timer = (() => {
         return audioContext;
     }
 
-    // Play a beep sound
-    function playBeep(frequency = 800, duration = 150, type = 'sine') {
+    // Play a beep sound with optional envelope
+    function playBeep(frequency = 800, duration = 150, type = 'sine', volume = 0.3) {
         try {
             const ctx = initAudio();
             const oscillator = ctx.createOscillator();
@@ -44,7 +44,7 @@ const Timer = (() => {
             oscillator.frequency.value = frequency;
             oscillator.type = type;
 
-            gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+            gainNode.gain.setValueAtTime(volume, ctx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
 
             oscillator.start(ctx.currentTime);
@@ -54,52 +54,120 @@ const Timer = (() => {
         }
     }
 
-    // Different sound patterns
+    // Play a chord (multiple frequencies)
+    function playChord(frequencies, duration = 200, type = 'sine', volume = 0.15) {
+        frequencies.forEach(freq => playBeep(freq, duration, type, volume));
+    }
+
+    // ====== DISTINCT SOUND PATTERNS ======
+    // HOLD = Energizing, ascending, bright (cyan/blue theme)
+    // REST = Calming, soft, lower tones (amber/orange theme)
+    // COUNTDOWN = Building tension, dramatic
+    // COMPLETE = Celebratory, satisfying
+
     const sounds = {
+        // === HOLD PHASE (Exercise) - Bright, energizing ===
         startHold: () => {
-            playBeep(880, 200); // High beep
+            // Ascending power chord - "GO!"
+            playBeep(523, 100, 'sine', 0.3);  // C5
+            setTimeout(() => playBeep(659, 100, 'sine', 0.3), 80);  // E5
+            setTimeout(() => playBeep(784, 200, 'sine', 0.35), 160); // G5
         },
-        countdown: () => {
-            playBeep(660, 100); // Medium beep
-        },
+
         endHold: () => {
-            playBeep(440, 300); // Low beep
+            // Satisfying descending resolution
+            playBeep(784, 150, 'sine', 0.25); // G5
+            setTimeout(() => playBeep(659, 150, 'sine', 0.2), 120); // E5
+            setTimeout(() => playBeep(523, 200, 'sine', 0.15), 240); // C5
         },
+
+        // === REST PHASE - Calming, soft ===
         startRest: () => {
-            playBeep(550, 150);
-            setTimeout(() => playBeep(550, 150), 200);
+            // Gentle double chime - "relax"
+            playBeep(392, 200, 'sine', 0.2);  // G4 (lower, calming)
+            setTimeout(() => playBeep(330, 250, 'sine', 0.15), 180); // E4
         },
+
+        endRest: () => {
+            // Soft awakening tone
+            playBeep(440, 150, 'sine', 0.2); // A4
+        },
+
+        // === COUNTDOWN (last 3 seconds) ===
+        countdown3: () => {
+            // Low anticipation tick
+            playBeep(440, 80, 'triangle', 0.25); // A4
+        },
+        countdown2: () => {
+            // Rising anticipation
+            playBeep(523, 80, 'triangle', 0.3); // C5
+        },
+        countdown1: () => {
+            // High alert - about to change!
+            playBeep(659, 100, 'triangle', 0.35); // E5
+        },
+        countdown0: () => {
+            // Transition marker
+            playBeep(784, 120, 'sine', 0.4); // G5
+        },
+
+        // === PROGRESS MARKERS ===
+        repComplete: () => {
+            // Quick satisfying "ding"
+            playBeep(880, 80, 'sine', 0.2);  // A5
+            setTimeout(() => playBeep(1047, 100, 'sine', 0.25), 60); // C6
+        },
+
         exerciseComplete: () => {
-            playBeep(880, 100);
-            setTimeout(() => playBeep(1100, 100), 150);
-            setTimeout(() => playBeep(1320, 200), 300);
+            // Triumphant ascending arpeggio
+            playBeep(523, 100, 'sine', 0.25);  // C5
+            setTimeout(() => playBeep(659, 100, 'sine', 0.25), 100);  // E5
+            setTimeout(() => playBeep(784, 100, 'sine', 0.3), 200);   // G5
+            setTimeout(() => playBeep(1047, 200, 'sine', 0.35), 300); // C6
         },
+
         workoutComplete: () => {
-            playBeep(660, 150);
-            setTimeout(() => playBeep(880, 150), 200);
-            setTimeout(() => playBeep(1100, 150), 400);
-            setTimeout(() => playBeep(1320, 300), 600);
+            // Victory fanfare!
+            playChord([523, 659, 784], 200, 'sine', 0.15); // C major chord
+            setTimeout(() => playChord([587, 740, 880], 200, 'sine', 0.15), 250); // D major
+            setTimeout(() => playChord([659, 784, 988], 200, 'sine', 0.18), 500); // E minor-ish
+            setTimeout(() => playChord([523, 659, 784, 1047], 400, 'sine', 0.2), 750); // C major with octave
         },
+
+        // Legacy/generic tick
         tick: () => {
-            playBeep(1000, 50, 'square');
+            playBeep(800, 40, 'square', 0.15);
         }
     };
 
-    // Trigger vibration
+    // ====== DISTINCT VIBRATION PATTERNS ======
+    // HOLD = Strong, confident pulses
+    // REST = Gentle, soft feedback
+    // COUNTDOWN = Escalating intensity
+
     function vibrate(pattern = [100]) {
         if (navigator.vibrate) {
             navigator.vibrate(pattern);
         }
     }
 
-    // Vibration patterns
     const vibrations = {
-        startHold: () => vibrate([200]),
-        countdown: () => vibrate([50]),
-        endHold: () => vibrate([100, 50, 100]),
-        startRest: () => vibrate([50, 50, 50]),
-        exerciseComplete: () => vibrate([100, 100, 100, 100, 200]),
-        workoutComplete: () => vibrate([200, 100, 200, 100, 400])
+        // HOLD - Strong, confident
+        startHold: () => vibrate([150, 50, 150]),       // Two strong pulses
+        endHold: () => vibrate([100, 80, 100, 80, 100]), // Triple pulse (done!)
+
+        // REST - Gentle, calming
+        startRest: () => vibrate([80, 100, 80]),        // Soft double tap
+
+        // COUNTDOWN - Building intensity
+        countdown3: () => vibrate([40]),                 // Light tap
+        countdown2: () => vibrate([60]),                 // Medium tap
+        countdown1: () => vibrate([100]),                // Strong tap
+
+        // PROGRESS
+        repComplete: () => vibrate([50, 50, 50]),        // Quick triple
+        exerciseComplete: () => vibrate([100, 80, 100, 80, 150]), // Celebration pattern
+        workoutComplete: () => vibrate([200, 100, 200, 100, 300, 100, 400]) // Victory pattern
     };
 
     // Speech synthesis for instructions (optional - off by default)
@@ -184,10 +252,16 @@ const Timer = (() => {
         if (state.currentTime > 0) {
             state.currentTime--;
 
-            // Play countdown sounds for last 3 seconds
-            if (state.currentTime <= 3 && state.currentTime > 0) {
-                if (settings.soundEnabled) sounds.countdown();
-                if (settings.vibrationEnabled) vibrations.countdown();
+            // Play distinct countdown sounds for last 3 seconds (escalating intensity)
+            if (state.currentTime === 3) {
+                if (settings.soundEnabled) sounds.countdown3();
+                if (settings.vibrationEnabled) vibrations.countdown3();
+            } else if (state.currentTime === 2) {
+                if (settings.soundEnabled) sounds.countdown2();
+                if (settings.vibrationEnabled) vibrations.countdown2();
+            } else if (state.currentTime === 1) {
+                if (settings.soundEnabled) sounds.countdown1();
+                if (settings.vibrationEnabled) vibrations.countdown1();
             }
 
             state.callbacks.onTick({
@@ -217,9 +291,15 @@ const Timer = (() => {
                 break;
 
             case 'hold':
-                // Hold complete
+                // Hold complete - rep finished!
                 if (settings.soundEnabled) sounds.endHold();
                 if (settings.vibrationEnabled) vibrations.endHold();
+
+                // Quick satisfying rep complete feedback
+                setTimeout(() => {
+                    if (settings.soundEnabled) sounds.repComplete();
+                    if (settings.vibrationEnabled) vibrations.repComplete();
+                }, 300);
 
                 state.callbacks.onRepComplete({
                     rep: state.currentRep,
